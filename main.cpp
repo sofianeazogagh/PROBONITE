@@ -2,6 +2,13 @@
 #include <tfhe/tfhe_io.h>
 #include <stdio.h>
 
+// // #include <gmp.h>
+// // #include <NTL/ZZX.h>
+
+// #include <vector>
+// #include <iostream>
+// #include <memory>
+// #include <thread>
 
 int main() {
     //generate a keyset
@@ -58,6 +65,6 @@ int main() {
     delete_gate_bootstrapping_secret_keyset(key);
     delete_gate_bootstrapping_parameters(params);
 
+    return 0;
+
 }
-
-
