@@ -4,9 +4,8 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/local/include",
-                "/opt/homebrew/include/**",
-                "/opt/homebrew/**"
+                "/usr/local/include/**",
+                "/usr/local/include/boost/**"
             ],
             "defines": [],
             "macFrameworkPath": [],
