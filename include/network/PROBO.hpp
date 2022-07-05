@@ -24,9 +24,9 @@ private:
 
 class PROBOClient {
 public:
-    PPDTClient() {}
+    PROBOClient() {}
 
-    ~PPDTClient() {}
+    ~PROBOClient() {}
     /// Client's input is one line splitted with comma.
     bool load(std::string const& file);
 

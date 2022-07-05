@@ -59,7 +59,7 @@ struct PROBOClient::Imp {
         conn << &bk;
     }
 
-    void encrypt_features(TFheGateBootstrappingSecretKeySet *secret, LweParams* in_out_params)
+    void encrypt_features(TFheGateBootstrappingSecretKeySet *secret, const LweParams *in_out_params)
     {   
         for(size_t i=0; i<features_.size(); i++) {
             enc_features_[i] = new_LweSample(in_out_params); // initialize ciphertext with params
@@ -88,8 +88,8 @@ struct PROBOClient::Imp {
         send_bootstrapping_key(bk, conn);
 
         // in loop do-while : send BK, encrypt features, send encrypted features and wait result
-        //send_bootstrapping_key()
-        //encrypt_features(secret, in_out_params);
+        send_bootstrapping_key(bk, conn);
+        encrypt_features(secret, in_out_params);
         send_encrypted_features(conn);
     }
 
