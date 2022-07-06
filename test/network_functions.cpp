@@ -1,6 +1,9 @@
 #include <iostream>
 #include <vector>
 #include <boost/asio.hpp>
+#include "tfhe.h"
+#include "tfhe_io.h"
+#include "tfhe_gate_bootstrapping_functions.h"
 
 std::vector<char> buff(256);
 
@@ -21,6 +24,34 @@ namespace network
     std::string addr = "127.0.0.1";
 }
 
+void send_params(TFheGateBootstrappingParameterSet *params, std::ostream &conn){
+        
+        export_tfheGateBootstrappingParameterSet_toStream(conn, params);
+        std::cout << "[Client] Parameters sent from client";
+
+}
+
+TFheGateBootstrappingParameterSet* receive_params(std::istream &conn){
+
+    std::string message_received;
+    TFheGateBootstrappingParameterSet* params = new_tfheGateBootstrappingParameterSet_fromStream(conn);
+    std::cout << "[Server] Parameters received by server";
+
+    return params;
+
+}
+
+void print_parameters(TFheGateBootstrappingParameterSet* param){
+
+    std::cout << "(alpha_max=" << param->in_out_params->alpha_max 
+    << ", alpha_min=" << param->in_out_params->alpha_min
+    << ", n=" << param->in_out_params->n
+    << ", ks_basebit=" << param->ks_basebit
+    << ", ks_t=" << param->ks_t
+    << ")\n";
+
+}
+
 void Server()
 {
     // boost::asio::io_service service;
@@ -37,7 +68,7 @@ void Server()
     // // socket.async_send(boost::asio::buffer(msg), SendHandler);
     // service.run();
 
-    int message_received;
+    
     using namespace boost::asio::ip;
     boost::asio::io_service ios;
     tcp::endpoint endpoint(tcp::v4(), network::port);
@@ -46,15 +77,17 @@ void Server()
     tcp::iostream conn;
     boost::system::error_code err;
 
-    std::cout << "[Server] Waiting for connection" << std::endl;
+    std::cout << "[Server] Waiting for connection \n" << std::endl;
 
     acceptor.accept(*conn.rdbuf(), err);
     if (!err){
 
-        std::cout << "[Server] Client connected to server";
-        conn >> message_received;
+        std::cout << "[Server] Client connected to server \n";
+        
+        TFheGateBootstrappingParameterSet* params = receive_params(conn);
+        
+        print_parameters(params);
 
-        std::cout << "The received message is " << message_received;
         conn.close();
     
     }
@@ -62,18 +95,6 @@ void Server()
 
 int Client()
 {
-    // boost::asio::io_service service;
-    // using namespace boost::asio::ip;
-    // tcp::endpoint endpoint(address::from_string("127.0.0.1"), 4000);
-    // tcp::socket socket(service);
-    // std::cout << "[Client] Connecting to server..." << std::endl;
-    // socket.connect(endpoint);
-    // std::cout << "[Client] Connection successful" << std::endl;
-
-    // //socket.async_read_some(boost::asio::buffer(buff), ReadHandler);
-    // service.run();
-
-
     int message_to_send = 10;
 
     using namespace boost::asio::ip;
@@ -85,14 +106,22 @@ int Client()
         return -1;
     }
 
-    std::cout << "[Client] Client connected to server";
-    conn << message_to_send;
+    std::cout << "[Client] Client connected to server \n";
+    
+    TFheGateBootstrappingParameterSet* params = new_default_gate_bootstrapping_parameters(110);
+
+    print_parameters(params);
+    
+    send_params(params, conn);
+
     conn.close();
     return 0;
+
 }
 
-int main(int argc, char **argv)
-{
+
+
+int main(int argc, char **argv){
     if (argc == 1)
     {
         std::cout << "Please specify s for server or c for client" << std::endl;
