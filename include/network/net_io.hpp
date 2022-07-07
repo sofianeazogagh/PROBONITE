@@ -4,6 +4,11 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <functional>
 #include <iostream>
+#include "tfhe/tfhe.h"
+#include "tfhe/tfhe_io.h"
+#include "tfhe/tfhe_gate_bootstrapping_functions.h"
+#include "tfhe/tfhe_gate_bootstrapping_structures.h"
+#include "tfhe/tfhe_core.h"
 
 using boost::asio::ip::tcp;
 using routine_t = std::function<void(tcp::iostream &)>;
@@ -13,10 +18,19 @@ namespace network {
     extern std::string addr;
 };
 
-class FHEcontext;
-FHEcontext receive_context(std::istream &s);
+void print_params(TFheGateBootstrappingParameterSet* param);
 
-void send_context(std::ostream &s, FHEcontext const& context);
+void send_params(TFheGateBootstrappingParameterSet *params, std::ostream &conn);
+
+void receive_params(TFheGateBootstrappingParameterSet* params, std::istream &conn);
+
+void receive_bootstrapping_key(LweBootstrappingKey *bk, std::istream &conn);
+
+void send_bootstrapping_key(const LweBootstrappingKey *bk, std::ostream &conn);
+
+void send_encrypted_features(LweSample *enc_features, std::ostream &conn, LweParams *params);
+
+void receive_encrypted_features(LweSample *enc_features, std::istream &conn, LweParams *params);
 
 int run_server(routine_t server_routine);
 

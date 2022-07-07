@@ -9,6 +9,7 @@
 #include "tfhe_gate_bootstrapping_functions.h"
 
 #include<fstream>
+#include "net_io.hpp"
 
 
 
@@ -49,15 +50,15 @@ struct PROBOClient::Imp {
         return ok;
     }
 
-    void send_params(TFheGateBootstrappingParameterSet *params, std::ostream &conn)
-    {
-        conn << &params;
-    }
+    // void send_params(TFheGateBootstrappingParameterSet *params, std::ostream &conn)
+    // {
+    //     conn << &params;
+    // }
 
-    void send_bootstrapping_key(const LweBootstrappingKey *bk, std::ostream &conn) const
-    {
-        conn << &bk;
-    }
+    // void send_bootstrapping_key(const LweBootstrappingKey *bk, std::ostream &conn) const
+    // {
+    //     conn << &bk;
+    // }
 
     void encrypt_features(TFheGateBootstrappingSecretKeySet *secret, const LweParams *in_out_params)
     {   
