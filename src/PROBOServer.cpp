@@ -4,23 +4,36 @@
 #include<iostream>
 #include <fstream>
 
-#include "util/literal.hpp"
-#include "util/Timer.hpp"
-#include<network/PROBO.hpp>
+#include "../include/util/literal.hpp"
+// #include "util/Timer.hpp"
+#include "../include/network/PROBO.hpp"
 
 #include <tfhe/tfhe_core.h>
+#include <tfhe/numeric_functions.h>
 
+struct Node {
 
+    Node() : threshold(-1), feature_index(-1), id(-1), acc(-1), left(nullptr), right(nullptr) {}
+    ~Node() {} //TODO free node
+
+    int32_t threshold;
+    int feature_index; 
+    int id; // indice du noeud
+    int acc; // accumulateur de bit de comparaisons 
+    Node *left;
+    Node *right;
+
+};
 
 
 struct Tree { //JEREMY
-
+    
+    int threshold;
     int feature_index; 
     int id; // indice du noeud
     int acc; // accumulateur de bit de comparaisons 
     struct Tree *left;
     struct Tree *right;
-
     bool is_leaf() const {
         return !this->left and !this->right;
     }
@@ -50,11 +63,11 @@ struct Tree { //JEREMY
 };
 
 
+
 struct PROBOServer::Imp{
     // using ctx_ptr_t = std::unique_ptr<Ctxt>; // a remplacer par l'equivalent en TFHE : Ctx = LweSample
     Imp() {}
-
-    ~Imp() { root->free_tree(root); delete root;}
+    ~Imp() {root->free_tree(root); delete root;}
 
     // read the file and put the threshold into threshold_ and the mapping id:feature_index into id_2_feature_index_
 
@@ -65,7 +78,7 @@ struct PROBOServer::Imp{
         bool ok = true;
         ok &= load_threshold(fd);
         ok &= load_mapping(fd);
-        ok &= build_tree();
+        // ok &= build_tree(); //JEREMY
         fd.close();
         return ok;
     }
@@ -108,10 +121,48 @@ struct PROBOServer::Imp{
         }
         return ok;
     }
+    
+    bool build_tree(){
+        int depth = log2(thresholds_.size()+1)-1; // Profondeur de l'arbre
+        std::vector<Node*> Tree[depth + 1]; // Tree = Tableau de d+1 étages
 
-    bool build_tree(){ // JEREMY
-        root = new Tree();
-        // construire l'arbre avec threshold_, id_2_feature_index
+
+        // Initialisation de la racine : unique element de l'etage B_0
+        Node *root = new Node();
+        root->id = 0;
+        root->threshold = thresholds_.at(root->id);
+        root->feature_index = id_2_feature_index_.find(root->id)->second;
+        root->acc = 1;
+        Tree[0].push_back(root);
+        int pos = 1;
+
+        // Construction de l'arbre par etage
+        for (int j = 1; j < depth + 1; j++) // Etage B_j cf. paper PROBONITE
+        {
+           for (int l = 1 ; l <= pow(2,j); l++) // Noeud B_j^l cf. paper PROBONITE
+           {
+            Node *node = new Node();
+            node->id = pos; // pow(2,j-1) + l;
+            node->threshold = thresholds_.at(node->id);
+            node->feature_index = id_2_feature_index_.find(node->id)->second;
+            node->acc = 1;
+            Tree[j].push_back(node);
+            pos++;
+           }
+        }
+        
+        // Linkage entre parents et enfants
+        for (int j = 0; j < depth ; j++)
+        {
+            std::vector<Node*> Bj = Tree[j];
+            for (int l = 0; l < Bj.size(); l++)
+            {
+               Node* parent_node = Bj.at(l);
+               parent_node->left = Tree[j+1].at(2*l);
+               parent_node->right = Tree[j+1].at(2*l + 1);
+            }
+        }
+        return true ;
     }
 
     bool receive_bootstrapping_key(const LweBootstrappingKey *bk, std::iostream &conn);
@@ -127,9 +178,7 @@ struct PROBOServer::Imp{
     int BlindArrayAccess(std::vector<LweSample*> features, LweSample* enc_feature_index);
 
     // give the bit b = feature < enc_threshold
-    LweSample* Compare(LweSample* feature, LweSample* enc_threshold, LweBootstrappingKey* BK) {
-
-    };
+    LweSample* Compare(LweSample* feature, LweSample* enc_threshold, LweBootstrappingKey* BK);
 
 
 
@@ -141,4 +190,7 @@ struct PROBOServer::Imp{
     std::map<int, int> id_2_feature_index_; //contient les mapping id::feature_index
     std::vector<LweSample*> const features_ ; // vecteur de features du client chiffré
     Tree *root;
+    
 };
+
+
