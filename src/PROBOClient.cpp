@@ -1,14 +1,14 @@
-#include<network/PROBO.hpp>
-#include "util/Timer.hpp"
-#include "util/literal.hpp"
+#include "../include/network/PROBO.hpp"
+#include "../include/util/literal.hpp"
 
 
-#include "tfhe_core.h"
-#include "numeric_functions.h"
-#include "lwe-functions.h"
-#include "tfhe_gate_bootstrapping_functions.h"
+#include "tfhe/tfhe_core.h"
+#include "tfhe/numeric_functions.h"
+#include "tfhe/lwe-functions.h"
+#include "tfhe/tfhe_gate_bootstrapping_functions.h"
 
 #include<fstream>
+#include<vector>
 
 
 
@@ -18,11 +18,10 @@
 
 
 
-struct PROBOClient::Imp {
+struct PROBOClient::Imp{
+
     Imp() {}
     ~Imp() {}
-
-
     bool load(std::string const& file) {
         std::ifstream fd(file);
         if (!fd.is_open())
@@ -37,14 +36,14 @@ struct PROBOClient::Imp {
         features_.resize(fields.size());
         bool ok = true;
         std::transform(fields.cbegin(), fields.cend(), features_.begin(),
-                       [&ok](const std::string &field) -> long {
-                           auto f = util::trim(field);
-                           size_t pos;
-                           long v = std::stol(f, &pos, 10);
-                           if (pos != f.size())
-                               ok = false;
-                           return v; 
-                       });
+                        [&ok](const std::string &field) -> long {
+                            auto f = util::trim(field);
+                            size_t pos;
+                            long v = std::stol(f, &pos, 10);
+                            if (pos != f.size())
+                                ok = false;
+                            return v; 
+                        });
         fd.close();
         return ok;
     }
@@ -61,18 +60,20 @@ struct PROBOClient::Imp {
 
     void encrypt_features(TFheGateBootstrappingSecretKeySet *secret, const LweParams *in_out_params)
     {   
-        for(size_t i=0; i<features_.size(); i++) {
-            enc_features_[i] = new_LweSample(in_out_params); // initialize ciphertext with params
-            Torus32 mu = modSwitchToTorus32(features_[i],SEC_PARAMS_N); //Sofiane : SEC_PARAMS_N a changer par N qd params gen
-            lweSymEncrypt(enc_features_[i], mu, SECALPHA, secret->lwe_key); //Sofiane : pareil ici pour SECALPHA
+       
+        enc_features_ = new_LweSample_array(features_.size(),in_out_params);
+        for (size_t i = 0; i < features_.size(); i++)
+        {   
+            Torus32 mu = modSwitchToTorus32(features_[i], SEC_PARAMS_N);
+            lweSymEncrypt(enc_features_ + i, mu, SECALPHA, secret->lwe_key);
         }
     }
 
     void send_encrypted_features(std::ostream &conn) const {
-        int32_t num = enc_features_.size();
-        conn << num << '\n';
-        for (const auto &ctx : enc_features_)
-            conn << ctx;
+        int32_t nummber_of_features = features_.size();
+        conn << nummber_of_features << '\n';
+        for (size_t i=0 ; i< nummber_of_features; i++)
+            conn << (enc_features_ + i);
     }
 
     void run(tcp::iostream &conn){
@@ -93,8 +94,47 @@ struct PROBOClient::Imp {
         send_encrypted_features(conn);
     }
 
-    std::vector<int32_t> features_ ;
-    std::vector<LweSample*> enc_features_; // a initialisé avec les params
+    std::vector<int32_t> features_;
+    LweSample *enc_features_;
 
-    
 };
+
+void test_encrypt_features(LweSample* enc_features, std::vector<int32_t> features)
+{
+    // Generate parameters by giving security level
+    TFheGateBootstrappingParameterSet *params = new_default_gate_bootstrapping_parameters(SECLEVEL);
+    const LweParams *in_out_params = params->in_out_params;
+
+    // Generate the secret keyset by giving params
+    TFheGateBootstrappingSecretKeySet *secret = new_random_gate_bootstrapping_secret_keyset(params);
+    const LweBootstrappingKey *bk = secret->cloud.bk;
+
+    enc_features = new_LweSample_array(features.size(),in_out_params);
+    for (size_t i = 0; i < features.size(); i++)
+    {   
+        Torus32 mu = modSwitchToTorus32(features[i], SEC_PARAMS_N);
+        lweSymEncrypt(enc_features + i, mu, SECALPHA, secret->lwe_key);
+        printf("the encrypted features %d are (%p,%d)\n",features[i],(enc_features + i )->a, (enc_features +i)->b);
+    }
+
+    std::vector<int32_t> dec_features;
+    for (size_t i = 0; i < features.size(); i++)
+    {   
+        Torus32 dec = lweSymDecrypt(enc_features + i,secret->lwe_key,SEC_PARAMS_N);
+        dec_features.push_back(modSwitchFromTorus32(dec,SEC_PARAMS_N));
+        printf("the decrypted features (%p,%d) are %d\n",(enc_features + i)->a,(enc_features + i )->b, dec_features[i]);
+    }
+
+}
+
+
+int main(int argc, char **argv)
+{   
+    
+    std::vector<int32_t> features = {2, 3, 6, 9, 256, 90};
+    LweSample* enc_features;
+    test_encrypt_features(enc_features, features);
+
+    return 0;
+        
+}
