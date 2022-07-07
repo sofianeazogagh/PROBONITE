@@ -26,41 +26,41 @@ struct Node {
 };
 
 
-struct Tree { //JEREMY
+// struct Tree {
     
-    int threshold;
-    int feature_index; 
-    int id; // indice du noeud
-    int acc; // accumulateur de bit de comparaisons 
-    struct Tree *left;
-    struct Tree *right;
-    bool is_leaf() const {
-        return !this->left and !this->right;
-    }
+//     int threshold;
+//     int feature_index; 
+//     int id; // indice du noeud
+//     int acc; // accumulateur de bit de comparaisons 
+//     struct Tree *left;
+//     struct Tree *right;
+//     bool is_leaf() const {
+//         return !this->left and !this->right;
+//     }
 
-    void free_tree(Tree *root) {
-        if (!root)
-            return;
-        if (root->is_leaf()) {
-            delete root;
-        } else {
-            free_tree(root->left);
-            free_tree(root->right);
-        }
-    }
+//     void free_tree(Tree *root) {
+//         if (!root)
+//             return;
+//         if (root->is_leaf()) {
+//             delete root;
+//         } else {
+//             free_tree(root->left);
+//             free_tree(root->right);
+//         }
+//     }
 
-    void print(Tree *root, std::string path) {
-        if (!root)
-            return;
-        if (root->is_leaf()) {
-            std::cout << path << " " << root->id << std::endl;
-        } else {
-            path = path + " " + std::to_string(root->id);
-            print(root->right, path);
-            print(root->left, path);
-        }
-    }
-};
+//     void print(Tree *root, std::string path) {
+//         if (!root)
+//             return;
+//         if (root->is_leaf()) {
+//             std::cout << path << " " << root->id << std::endl;
+//         } else {
+//             path = path + " " + std::to_string(root->id);
+//             print(root->right, path);
+//             print(root->left, path);
+//         }
+//     }
+// };
 
 
 
@@ -123,9 +123,6 @@ struct PROBOServer::Imp{
     }
     
     bool build_tree(){
-        int depth = log2(thresholds_.size()+1)-1; // Profondeur de l'arbre
-        std::vector<Node*> Tree[depth + 1]; // Tree = Tableau de d+1 étages
-
 
         // Initialisation de la racine : unique element de l'etage B_0
         Node *root = new Node();
@@ -150,7 +147,7 @@ struct PROBOServer::Imp{
             pos++;
            }
         }
-        
+
         // Linkage entre parents et enfants
         for (int j = 0; j < depth ; j++)
         {
@@ -170,10 +167,9 @@ struct PROBOServer::Imp{
     // read the client's stream and put the encrypted features into features_
     bool receive_feature(std::vector<LweSample*> &features, std::iostream &conn);
 
-    // Attendre que JEREMY implemente la structre Node
-    // std::vector<LweSample*> BlindNodeSelection(LweSample* b, 
-    //                                             std::vector<Node*> CurrentStageOfAccumulator, 
-    //                                             std::vector<Node*> NextStageOfAccumulator);
+    std::vector<LweSample*> BlindNodeSelection(LweSample* b, 
+                                                std::vector<Node*> CurrentStageOfAccumulator, 
+                                                std::vector<Node*> NextStageOfAccumulator);
 
     int BlindArrayAccess(std::vector<LweSample*> features, LweSample* enc_feature_index);
 
@@ -185,11 +181,11 @@ struct PROBOServer::Imp{
 
     void run(tcp::iostream &conn);
 
-
     std::vector<int> thresholds_ ; //contient les thresholds en clair
     std::map<int, int> id_2_feature_index_; //contient les mapping id::feature_index
     std::vector<LweSample*> const features_ ; // vecteur de features du client chiffré
-    Tree *root;
+    int depth = log2(thresholds_.size()+1)-1; // Profondeur de l'arbre
+    std::vector<Node*> Tree[depth + 1]; // Tree = Tableau de d+1 étages
     
 };
 
