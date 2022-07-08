@@ -22,15 +22,15 @@ void print_params(TFheGateBootstrappingParameterSet* param);
 
 void send_params(TFheGateBootstrappingParameterSet *params, std::ostream &conn);
 
-void receive_params(TFheGateBootstrappingParameterSet* params, std::istream &conn);
+TFheGateBootstrappingParameterSet *receive_params(std::istream &conn);
 
 void receive_bootstrapping_key(LweBootstrappingKey *bk, std::istream &conn);
 
 void send_bootstrapping_key(const LweBootstrappingKey *bk, std::ostream &conn);
 
-void send_encrypted_features(LweSample *enc_features, std::ostream &conn, LweParams *params);
+void send_encrypted_features(LweSample* enc_features, int number_of_features, std::ostream &conn, const LweParams *params);
 
-void receive_encrypted_features(LweSample *enc_features, std::istream &conn, LweParams *params);
+void receive_encrypted_features(LweSample* enc_features, int number_of_features, std::istream &conn, const LweParams *params);
 
 int run_server(routine_t server_routine);
 
