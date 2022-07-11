@@ -68,7 +68,7 @@ void Server()
     if (!err)
     {
 
-        std::cout << "[Server] Client connected to server \n";
+        std::cout << "[Server] Client connected to server \n" << std::endl;
 
         //recevoir les paramètres crypto
         serverParams = receive_params(conn);
@@ -84,6 +84,11 @@ void Server()
         //recevoir les features chiffrées
         server_enc_features_ = new_LweSample_array(number_of_features, serverParams->in_out_params);
         receive_encrypted_features(server_enc_features_, number_of_features, conn, serverParams->in_out_params);
+
+        send_result(server_enc_features_, conn, serverParams->in_out_params);
+
+        conn.close();
+
     }
 }
 
@@ -98,7 +103,7 @@ int Client()
         std::cerr << "[Client] Can not connect to server!" << std::endl;
         return -1;
     }
-    std::cout << "[Client] Client connected to server \n";
+    std::cout << "[Client] Client connected to server \n" << std::endl;
     
     //générer les paramètres TFHE et les envoyer au serveur
     clientParams = new_default_gate_bootstrapping_parameters(SECLEVEL);
@@ -116,6 +121,10 @@ int Client()
     encrypt_features(secret, clientParams->in_out_params);
     conn << features_.size();
     send_encrypted_features(client_enc_features_, features_.size(), conn,  clientParams->in_out_params);
+
+    LweSample *result = new_LweSample(clientParams->in_out_params);
+    
+    wait_result(result, conn, clientParams->in_out_params);
 
     conn.close();
 

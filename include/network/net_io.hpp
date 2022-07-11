@@ -20,6 +20,8 @@ namespace network {
 
 void print_params(TFheGateBootstrappingParameterSet* param);
 
+void print_lwe_sample(LweSample *cyphertext);
+
 void send_params(TFheGateBootstrappingParameterSet *params, std::ostream &conn);
 
 TFheGateBootstrappingParameterSet *receive_params(std::istream &conn);
@@ -31,6 +33,10 @@ void send_bootstrapping_key(const LweBootstrappingKey *bk, std::ostream &conn);
 void send_encrypted_features(LweSample* enc_features, int number_of_features, std::ostream &conn, const LweParams *params);
 
 void receive_encrypted_features(LweSample* enc_features, int number_of_features, std::istream &conn, const LweParams *params);
+
+void wait_result(LweSample *enc_response, std::istream &conn, const LweParams *params);
+
+void send_result(LweSample *enc_reponse, std::ostream &conn, const LweParams *params);
 
 int run_server(routine_t server_routine);
 
