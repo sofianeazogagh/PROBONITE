@@ -7,7 +7,8 @@
                 "/usr/local/include/**",
                 "/usr/local/include/boost/**",
                 "/usr/local/include/tfhe",
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include",
+                "/usr/local/include"
             ],
             "defines": [],
             "macFrameworkPath": [],

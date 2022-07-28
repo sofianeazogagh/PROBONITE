@@ -12,9 +12,7 @@
 
 
 
-#define SECALPHA pow(2., -20) // A modifier plus tard
-#define SEC_PARAMS_N 1024                   /// TLweParams
-#define SECLEVEL 128 // security level lambda 
+
 
 
 

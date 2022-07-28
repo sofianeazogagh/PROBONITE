@@ -8,66 +8,40 @@
 // #include "util/Timer.hpp"
 #include "../include/network/PROBO.hpp"
 
-#include <tfhe/tfhe_core.h>
-#include <tfhe/numeric_functions.h>
 
-struct Node {
+
+// #include "tfhe/tfhe_core.h"
+// #include "tfhe/numeric_functions.h"
+// #include "tfhe/lwe-functions.h"
+// #include "tfhe/tfhe_gate_bootstrapping_functions.h"
+// #include "tfhe/tgsw.h"
+#include "tfhe/tfhe.h"
+#include "tfhe/tfhe_garbage_collector.h"
+#include "tfhe/tlwe.h"
+#include "tfhe/tgsw.h"
+#include "tfhe/lwesamples.h"
+#include "tfhe/lwekey.h"
+#include "tfhe/lweparams.h"
+#include "tfhe/polynomials.h"
+
+struct Node{
 
     Node() : threshold(-1), feature_index(-1), id(-1), acc(-1), left(nullptr), right(nullptr) {}
-    ~Node() {} //TODO free node
+    // ~Node() :  { } //TODO free node
 
     int32_t threshold;
     int feature_index; 
     int id; // indice du noeud
     int acc; // accumulateur de bit de comparaisons 
-    Node *left;
-    Node *right;
+    struct Node *left;
+    struct Node *right;
 
 };
 
 
-// struct Tree {
-    
-//     int threshold;
-//     int feature_index; 
-//     int id; // indice du noeud
-//     int acc; // accumulateur de bit de comparaisons 
-//     struct Tree *left;
-//     struct Tree *right;
-//     bool is_leaf() const {
-//         return !this->left and !this->right;
-//     }
-
-//     void free_tree(Tree *root) {
-//         if (!root)
-//             return;
-//         if (root->is_leaf()) {
-//             delete root;
-//         } else {
-//             free_tree(root->left);
-//             free_tree(root->right);
-//         }
-//     }
-
-//     void print(Tree *root, std::string path) {
-//         if (!root)
-//             return;
-//         if (root->is_leaf()) {
-//             std::cout << path << " " << root->id << std::endl;
-//         } else {
-//             path = path + " " + std::to_string(root->id);
-//             print(root->right, path);
-//             print(root->left, path);
-//         }
-//     }
-// };
-
-
-
 struct PROBOServer::Imp{
-    // using ctx_ptr_t = std::unique_ptr<Ctxt>; // a remplacer par l'equivalent en TFHE : Ctx = LweSample
     Imp() {}
-    ~Imp() {root->free_tree(root); delete root;}
+    ~Imp() {}
 
     // read the file and put the threshold into threshold_ and the mapping id:feature_index into id_2_feature_index_
 
@@ -122,7 +96,7 @@ struct PROBOServer::Imp{
         return ok;
     }
     
-    bool build_tree(){
+    bool build_tree(std::vector<Node*> Tree[], const int depth){
 
         // Initialisation de la racine : unique element de l'etage B_0
         Node *root = new Node();
@@ -168,25 +142,21 @@ struct PROBOServer::Imp{
     bool receive_feature(std::vector<LweSample*> &features, std::iostream &conn);
 
     std::vector<LweSample*> BlindNodeSelection(LweSample* b, 
-                                                std::vector<Node*> CurrentStageOfAccumulator, 
-                                                std::vector<Node*> NextStageOfAccumulator);
+                                                std::vector<Node*> CurrentStageOfNode, 
+                                                std::vector<Node*> NextStageOfNode);
 
     int BlindArrayAccess(std::vector<LweSample*> features, LweSample* enc_feature_index);
 
     // give the bit b = feature < enc_threshold
     LweSample* Compare(LweSample* feature, LweSample* enc_threshold, LweBootstrappingKey* BK);
 
-
-
-
     void run(tcp::iostream &conn);
 
     std::vector<int> thresholds_ ; //contient les thresholds en clair
     std::map<int, int> id_2_feature_index_; //contient les mapping id::feature_index
     std::vector<LweSample*> const features_ ; // vecteur de features du client chiffré
-    int depth = log2(thresholds_.size()+1)-1; // Profondeur de l'arbre
-    std::vector<Node*> Tree[depth + 1]; // Tree = Tableau de d+1 étages
+    // const int depth = log2(thresholds_.size()+1)-1; // Profondeur de l'arbre
+    // std::vector<Node*> *Tree = new std::vector<Node*>[depth + 1]; // Tree = Tableau de d+1 étages
     
 };
-
 
