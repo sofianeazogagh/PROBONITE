@@ -18,10 +18,10 @@
 
 
 
-struct PROBOClient::Imp{
+struct PROBOClient{
 
-    Imp() {}
-    ~Imp() {}
+    PROBOClient() {}
+    ~PROBOClient() {}
     bool load(std::string const& file) {
         std::ifstream fd(file);
         if (!fd.is_open())
@@ -76,23 +76,23 @@ struct PROBOClient::Imp{
             conn << (enc_features_ + i);
     }
 
-    void run(tcp::iostream &conn){
-        // Generate parameters by giving security level
-        TFheGateBootstrappingParameterSet *params = new_default_gate_bootstrapping_parameters(SECLEVEL);
-        const LweParams *in_out_params = params->in_out_params;
-        // Send these parameters
-        send_params(params, conn); 
+    // void run(tcp::iostream &conn){
+    //     // Generate parameters by giving security level
+    //     TFheGateBootstrappingParameterSet *params = new_default_gate_bootstrapping_parameters(SECLEVEL);
+    //     const LweParams *in_out_params = params->in_out_params;
+    //     // Send these parameters
+    //     send_params(params, conn); 
 
-        // Generate the secret keyset by giving params
-        TFheGateBootstrappingSecretKeySet *secret = new_random_gate_bootstrapping_secret_keyset(params);
-        const LweBootstrappingKey *bk = secret->cloud.bk;
-        send_bootstrapping_key(bk, conn);
+    //     // Generate the secret keyset by giving params
+    //     TFheGateBootstrappingSecretKeySet *secret = new_random_gate_bootstrapping_secret_keyset(params);
+    //     const LweBootstrappingKey *bk = secret->cloud.bk;
+    //     send_bootstrapping_key(bk, conn);
 
-        // in loop do-while : send BK, encrypt features, send encrypted features and wait result
-        send_bootstrapping_key(bk, conn);
-        encrypt_features(secret, in_out_params);
-        send_encrypted_features(conn);
-    }
+    //     // in loop do-while : send BK, encrypt features, send encrypted features and wait result
+    //     send_bootstrapping_key(bk, conn);
+    //     encrypt_features(secret, in_out_params);
+    //     send_encrypted_features(conn);
+    // }
 
     std::vector<int32_t> features_;
     LweSample *enc_features_;
