@@ -1,3 +1,9 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c8ea3801d345d603c128ff8f09ab97ab309c114c5bdb7386c68e2e18b7e31270
-size 350
+# PROBONITE
+
+
+Aprés avoir correctement installer TFHE (verifier que les headers sont dans /usr/local/include et le fichier libtfhe-nayuki-portable.dylib est dans /usr/local/lib). On peut compiler le fichier FBootsrrapping toujours en travaux avec la commande suivante :
+
+```bash
+g++ -std=c++11 FBootstrapping.cpp -o test -ltfhe-nayuki-portable
+```
+

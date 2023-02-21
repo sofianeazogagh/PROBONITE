@@ -1,3 +1,36 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:d859e1e9c116dd207c9a4020b62600a38640d5d07a91ee9e875c4b348609c29d
-size 400
+# Blind Array Access packed version
+
+
+
+## Requirements
+
+* OpenFHE
+* OpenMP
+
+## Build
+
+```bash
+mkdir build
+```
+
+```bash
+cd build
+```
+```bash
+cmake ..
+```
+
+Modifier le CMakeLists.txt en fonction du code source voulu
+* MultiBAAcc.cpp utilise MultiOHS
+* BAAcc.cpp utilise un seul OHS
+
+```bash
+make
+```
+
+Puis lancer l'executable créer.
+
+
+## Comments
+
+The keys must be generated locally (to heavy for git)

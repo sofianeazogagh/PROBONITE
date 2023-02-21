@@ -1,3 +1,33 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:54f86c13fd2d5ffc5d6060f9187e04f998221b81d2b259f92eab069ee9ebb77d
-size 391
+# PROBONITE implemented with openfhe
+
+
+
+## Requirements
+
+* OpenFHE
+
+## Build
+
+```bash
+cd src
+mkdir build
+```
+
+```bash
+cd build
+```
+```bash
+cmake ..
+```
+
+Modifier le CMakeLists.txt en fonction de
+* PROBONITE pour les differentes primitive de PROBONITE
+* FBoostrapping pour un public blind array access
+* les autres fichiers pour des tests
+
+
+```bash
+make
+```
+
+Puis lancer l'executable créer.
