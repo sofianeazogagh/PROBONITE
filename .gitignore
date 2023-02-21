@@ -1,1 +1,9 @@
-test/test
+packed-PROBONITE/BlindArrayAccess/build/
+packed-PROBONITE/BlindArrayAccess/keys/
+packed-PROBONITE/pdte/
+packed-PROBONITE/src/
+packed-PROBONITE/test/
+tfhe-pdte/
+include/
+openfhe-pdte/
+main.cpp
