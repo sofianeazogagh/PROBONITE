@@ -1,10 +1,13 @@
 use tfhe::shortint::parameters::*;
 use tfhe::shortint::prelude::*;
 
+
+use std::time::{Instant};
+
 pub fn test_probonite_one_stage(){
 
     // We generate a set of client/server keys, using the default parameters:
-    let (cks, sks) = gen_keys(PARAM_MESSAGE_3_CARRY_3);
+    let (cks, sks) = gen_keys(PARAM_MESSAGE_3_CARRY_2);
 
     let acc = sks.generate_accumulator(f);
     println!("Generated accumulator");
@@ -13,18 +16,18 @@ pub fn test_probonite_one_stage(){
     let parent_acc_2 = 0;
     let parent_acc_3 = 0;
     let parent_acc_4 = 0;
-    let theta_1:u8 = 4;
+    let theta_1:u8 = 3;
     let theta_2:u8 = 3;
     let theta_3:u8 = 1;
     let theta_4:u8 = 2;
     let theta_5:u8 = 0;
-    let theta_6:u8 = 6;
-    let theta_7:u8 = 0;
-    let theta_8:u8 = 6;
+    let theta_6:u8 = 1;
+    let theta_7:u8 = 2;
+    let theta_8:u8 = 3;
 
 
     let index_feature:u64 = 2;
-    let theta:u64 = 7;
+    let theta:u64 = 1;
 
     let ct_index_feature = cks.encrypt(index_feature);
     let mut ct_theta = cks.encrypt(theta);
@@ -36,13 +39,26 @@ pub fn test_probonite_one_stage(){
     println!("Encryption node for testing");
 
 
+    let start_third_stage = Instant::now();
+
+
+
+
+
+
+    let start_baacc = Instant::now();
     let mut ct_feat = sks.keyswitch_programmable_bootstrap(&ct_index_feature, &acc);
+    let duration_baacc = start_baacc.elapsed();
+    println!("Temps d'execution BAACC: {:?}",duration_baacc);
     println!("Blind array access");
     let mut output = cks.decrypt(&ct_feat);
     println!("ct_feat {}", output);
 
     // CMP
+    let start_cmp = Instant::now();
     let ct_cp = sks.smart_greater_or_equal( &mut ct_feat, &mut ct_theta );
+    let duration_cmp = start_cmp.elapsed();
+    println!("Temps d'exécution CP: {:?}", duration_cmp);
     output = cks.decrypt(&ct_cp);
     println!("ct_cp {}", output);
 
@@ -52,6 +68,7 @@ pub fn test_probonite_one_stage(){
 
 
     //AccAgg
+    let start_acc_agg = Instant::now();
     let ct_child_1_acc = sks.unchecked_mul_lsb(&ct_parent_acc_1, &ct_cp);
     output = cks.decrypt(&ct_child_1_acc);
     println!("ct_child_1_acc {}", output);
@@ -84,9 +101,17 @@ pub fn test_probonite_one_stage(){
     output = cks.decrypt(&ct_child_8_acc);
     println!("ct_child_8_acc {}", output);
 
+    let duration_acc_agg = start_acc_agg.elapsed();
+    println!("Temps d'exécution AccAgg : {:?}", duration_acc_agg);
+
     ///////// BNS
 
+
     //Absorb the nodes
+
+    let start_bns = Instant::now();
+
+    let start_abs = Instant::now();
     let ct_theta_1 = sks.unchecked_scalar_mul(&ct_child_1_acc, theta_1);
     output = cks.decrypt(&ct_theta_1);
     println!("ct_theta_1 {}", output);
@@ -121,18 +146,29 @@ pub fn test_probonite_one_stage(){
     output = cks.decrypt(&ct_theta_8);
     println!("ct_theta_8 {}", output);
 
+    let duration_abs = start_abs.elapsed();
+    println!("Temps d'exécution ABS thresholds : {:?}", duration_abs);
+
     // // Sum the absorbed nodes
     let mut ct_res = sks.unchecked_add(&ct_theta_1, &ct_theta_2);
+    let start_sum_in_place = Instant::now();
     ct_res = sks.unchecked_add(&ct_res, &ct_theta_3);
     ct_res = sks.unchecked_add(&ct_res,&ct_theta_4);
     ct_res = sks.unchecked_add(&ct_res,&ct_theta_5);
     ct_res = sks.unchecked_add(&ct_res,&ct_theta_6);
     ct_res = sks.unchecked_add(&ct_res,&ct_theta_7);
     ct_res = sks.unchecked_add(&ct_res,&ct_theta_8);
+    let duration_sum_in_place = start_sum_in_place.elapsed();
+    println!("Temps d'éxecution Sum in Place : {:?}",duration_sum_in_place);
+
+    let duration_bns = start_bns.elapsed();
+    println!("Temps d'exécution BNS: {:?}", duration_bns);
+
+    let duration_third_stage = start_third_stage.elapsed();
+    println!("Temps d'exécution 3rd stage: {:?}", duration_third_stage);
 
 
-
-    // // We use the client key to decrypt the output of the circuit:
+    // We use the client key to decrypt the output of the circuit:
     output = cks.decrypt(&ct_res);
     println!("Got theta {} , expected theta {}", output, theta_2);
 

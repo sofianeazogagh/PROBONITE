@@ -351,6 +351,7 @@ dependencies = [
 name = "tfhe-rs-pdte"
 version = "0.1.0"
 dependencies = [
+ "rayon",
  "tfhe",
 ]
 
