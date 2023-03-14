@@ -1,12 +1,15 @@
 use rayon::prelude::*;
+use rand::{thread_rng, Rng};
 
 use tfhe::shortint::parameters::*;
 use tfhe::shortint::prelude::*;
 
+#[allow(dead_code)]
+
 
 use std::time::{Instant};
 
-pub fn test_probonite_one_stage(){
+pub fn test_probonite_one_stage(current_stage : u64, next_stage : u64){
 
     // We generate a set of client/server keys, using the default parameters:
     let (cks, sks) = gen_keys(PARAM_MESSAGE_2_CARRY_2);
@@ -15,10 +18,30 @@ pub fn test_probonite_one_stage(){
     println!("Generated accumulator");
 
 
-    // let parent_acc : Vec<u64> = vec![1,0,0,0];
-    // let thetas:Vec<u8> = vec![3,3,1,2,0,1,2,3];
-    let parent_acc : Vec<u64> = vec![1,0];
-    let thetas:Vec<u8> = vec![3,2,1,2];
+    println!("---------- STAGE {} to {} ----------", current_stage,next_stage);
+
+
+    // let base: u64 = 2;
+    // let msg_modulus = cks.parameters.message_modulus.0;
+    // let mut parent_acc : Vec<u64> = vec![0;base.pow(current_stage as u32) as usize];
+    // parent_acc[0] = 1;
+    // let thetas:Vec<u64> = random_numbers_up_to_n((msg_modulus - 1) as u64, base.pow(next_stage as u32));
+    // let thetas = cast_to_u8(thetas);
+
+
+    // let parent_acc : Vec<u64> = vec![1,0];
+    // let thetas:Vec<u8> = vec![3,2,1,2];
+
+    let parent_acc : Vec<u64> = vec![1,0,0,0];
+    let thetas:Vec<u8> = vec![3, 0, 0, 1, 0, 2, 2, 0];
+
+
+
+    println!("parent_acc {:?}", parent_acc);
+    println!("thetas {:?}", thetas);
+
+
+
 
 
     let index_feature:u64 = 1;
@@ -66,20 +89,6 @@ pub fn test_probonite_one_stage(){
     //AccAgg
     let start_acc_agg = Instant::now();
 
-    // let mut ct_childs_acc : Vec<Ciphertext> = vec![];
-
-    // for ct_acc in ct_parent_acc {
-    //     let ct_child_left = sks.unchecked_mul_lsb(&ct_acc, &ct_cp);
-    //     let ct_child_right = sks.unchecked_mul_lsb(&ct_acc, &not_ct_cp);
-
-    //     let output1 = cks.decrypt(&(ct_child_left.clone()));
-    //     let output2 = cks.decrypt(&(ct_child_right.clone()));
-    //     println!("ct_child_left = {} \nct_child_right = {}",output1,output2);
-
-    //     ct_childs_acc.push(ct_child_left);
-    //     ct_childs_acc.push(ct_child_right);
-        
-    // }
 
     let mut ct_childs_acc: Vec<_> = ct_parent_acc
     .par_iter()
@@ -97,6 +106,8 @@ pub fn test_probonite_one_stage(){
 
 
 
+
+
     let duration_acc_agg = start_acc_agg.elapsed();
     println!("Temps d'exécution AccAgg : {:?}", duration_acc_agg);
 
@@ -109,17 +120,6 @@ pub fn test_probonite_one_stage(){
 
     let start_abs = Instant::now();
 
-
-    // let mut ct_thetas : Vec<Ciphertext> = vec![];
-    // for (i,ct_acc) in ct_childs_acc.iter_mut().enumerate() {
-    //     let ct_theta = sks.unchecked_scalar_mul(&ct_acc, thetas[i]);
-
-    //     let output1 = cks.decrypt(&(ct_theta.clone()));
-    //     println!("ct_theta = {}",output1);
-
-
-    //     ct_thetas.push(ct_theta);
-    // }
     
 
     let ct_thetas: Vec<_> = ct_childs_acc
@@ -137,10 +137,15 @@ pub fn test_probonite_one_stage(){
 
     let mut ct_res = ct_thetas[0].clone();
 
-    for i in 1..ct_thetas.len()
-    {
-        ct_res = sks.unchecked_add(&ct_res, &ct_thetas[i]);
+    if current_stage>1 {
+        for i in 1..ct_thetas.len()
+        {
+            ct_res = sks.unchecked_add(&ct_res, &ct_thetas[i]);
+        }
     }
+    else {
+        ct_res = sks.unchecked_add(&ct_res, &ct_thetas[1]);
+    } 
 
     let duration_sum_in_place = start_sum_in_place.elapsed();
     println!("Temps d'éxecution Sum in Place : {:?}",duration_sum_in_place);
@@ -149,24 +154,68 @@ pub fn test_probonite_one_stage(){
     println!("Temps d'exécution BNS: {:?}", duration_bns);
 
     let duration_third_stage = start_third_stage.elapsed();
-    println!("Temps d'exécution 3rd stage: {:?}", duration_third_stage);
+    println!("Temps d'exécution stage: {:?}", duration_third_stage);
 
 
     // We use the client key to decrypt the output of the circuit:
     output = cks.decrypt(&ct_res);
-    println!("Got theta {} , expected theta {}", output, thetas[1]);
+    println!("Got theta {}", output);
 
 }
 
 
 fn f(x:u64)->u64{
 
-    let vector:Vec<u64> = (0..4).collect();
+    let vector:Vec<u64> = (0..32).collect();
     let result = vector.get(x as usize);
 
     return match result {
         Some(result) => *result,
         None => 0,
     }
+
+}
+
+
+fn random_numbers_up_to_n(n: u64, num_elements: u64) -> Vec<u64> {
+    let mut rng = thread_rng();
+    (0..num_elements)
+        .map(|_| rng.gen_range(0..=n))
+        .collect()
+}
+
+
+
+fn cast_to_u8(v: Vec<u64>) -> Vec<u8> {
+    v.iter().map(|&x| x as u8).collect()
+}
+
+
+
+pub fn test_probonite_multi_stage()
+{
+
+    // root
+    let index_root:u64 = 1;
+    let theta_root:u64 = 2;
+
+
+    let tree : Vec<Vec<(u8,u8)>> = vec![
+                                        vec![(2,1)],
+                                    vec![(2,1) , (2,2)],
+                                vec![(2,3) , (2,2) , (2,1) ,( 2,2)],
+                        vec![(2,3) , (2,0) , (2,0) , (2,1) , (2,0) , (2,1) , (2,0)],
+
+        vec![(2,3),(2,0), (2,0),(2,1), (2,0),(2,1), (2,0),(2,3), (2,0),(2,0), (2,1),(2,0), (2,1),(2,0)]
+    ];
+
+
+
+    
+
+
+
+
+    test_probonite_one_stage(2,3);
 
 }

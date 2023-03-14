@@ -1,3 +1,0 @@
-cargo:rerun-if-changed=build/main.rs
-cargo:rustc-env=TYPENUM_BUILD_CONSTS=/Users/sofianeazogagh/Desktop/PROBONITE/PROBONITE/tfhe-rs-pdte/target/debug/build/typenum-84ff2b94b30974f3/out/consts.rs
-cargo:rustc-env=TYPENUM_BUILD_OP=/Users/sofianeazogagh/Desktop/PROBONITE/PROBONITE/tfhe-rs-pdte/target/debug/build/typenum-84ff2b94b30974f3/out/op.rs
