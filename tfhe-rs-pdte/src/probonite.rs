@@ -86,16 +86,16 @@ pub fn probonite_one_stage(sks : ServerKey,
 
     
 
-    let ct_thetas: Vec<_> = ct_childs_acc
+    let mut ct_thetas: Vec<_> = ct_childs_acc
     .par_iter_mut()
     .enumerate()
-    .map(|(i, ct_acc)| sks.unchecked_scalar_mul(&ct_acc, next_stage[i].1))
+    .map(|(i, ct_acc)| sks.unchecked_scalar_mul(ct_acc, next_stage[i].1))
     .collect();
 
-    let ct_indexs: Vec<_> = ct_childs_acc
+    let mut ct_indexs: Vec<_> = ct_childs_acc
     .par_iter_mut()
     .enumerate()
-    .map(|(i, ct_acc)| sks.unchecked_scalar_mul(&ct_acc, next_stage[i].0))
+    .map(|(i, ct_acc)| sks.unchecked_scalar_mul(ct_acc, next_stage[i].0))
     .collect();
 
 
@@ -108,13 +108,13 @@ pub fn probonite_one_stage(sks : ServerKey,
     let mut ct_next_theta = ct_thetas[0].clone();
     for i in 1..ct_thetas.len()
     {
-        ct_next_theta = sks.unchecked_add(&ct_next_theta, &ct_thetas[i]);
+        ct_next_theta = sks.unchecked_add(&mut ct_next_theta, &mut ct_thetas[i]);
     }
 
     let mut ct_next_index = ct_indexs[0].clone();
     for i in 1..ct_thetas.len()
     {
-        ct_next_index = sks.unchecked_add(&ct_next_index, &ct_indexs[i]);
+        ct_next_index = sks.unchecked_add(&mut ct_next_index, &mut ct_indexs[i]);
     }
 
     let duration_sum_in_place = start_sum_in_place.elapsed();
@@ -137,7 +137,7 @@ pub fn probonite_one_stage(sks : ServerKey,
 }
 
 
-fn f(x:u64)->u64{
+fn features(x:u64)->u64{
 
     let vector:Vec<u64> = (0..32).collect();
     let result = vector.get(x as usize);
@@ -165,7 +165,7 @@ fn cast_to_u8(v: Vec<u64>) -> Vec<u8> {
 
 
 
-fn probonite_first_stage(sks: ServerKey,
+pub fn probonite_first_stage(sks: ServerKey,
     node : (u8,u8),
     lut : &Accumulator,
     next_stage : Vec<(u8,u8)>,
@@ -186,7 +186,8 @@ fn probonite_first_stage(sks: ServerKey,
     let ct_feat = sks.keyswitch_programmable_bootstrap(&trivial_index, lut);
 
     //CMP entre feature[index_feature] et theta chiffré
-    let ct_cp = sks.smart_scalar_greater(&ct_feat, theta);
+    let ct_theta = sks.create_trivial(theta as u64);
+    let ct_cp = sks.unchecked_greater(&ct_feat, &ct_theta);
     
 
     //ACCAgg
@@ -225,22 +226,76 @@ fn probonite_first_stage(sks: ServerKey,
 }   
 
 
-pub fn probonite()
+
+// fn build_decision_tree(depth: usize) -> Vec<Vec<(u8, u8)>> {
+//     if depth == 0 {
+//         return vec![];
+//     }
+
+//     let mut tree = vec![vec![(0, 2)]];
+
+//     for _ in 1..depth {
+//         let mut new_level = Vec::new();
+//         let branches = tree.last().unwrap();
+        
+//         for &(a, b) in branches {
+//             new_level.push((a, b));
+//             new_level.push((a, b));
+//         }
+        
+//         tree.push(new_level);
+//     }
+
+//     print!("tree = {:?}",tree);
+
+//     tree
+// }
+
+
+
+fn build_decision_tree(depth: usize) -> Vec<Vec<(u8, u8)>> {
+    let mut rng = rand::thread_rng();
+    let mut tree = vec![vec![(rng.gen_range(0..=3), rng.gen_range(0..=3))]];
+
+    for _ in 1..depth {
+        let mut new_level = Vec::new();
+        let last_level_nodes = tree.last().unwrap();
+
+        for _ in 0..(last_level_nodes.len() * 2) {
+            new_level.push((rng.gen_range(0..=3), rng.gen_range(0..=3)));
+        }
+
+        tree.push(new_level);
+    }
+
+
+    tree
+}
+
+
+pub fn probonite(d : usize)
 {
 
     // We generate a set of client/server keys, using the default parameters:
     let (cks, sks) = gen_keys(PARAM_MESSAGE_2_CARRY_2);
-    let lut = sks.generate_accumulator(f);
+    let lut = sks.generate_accumulator(|x| features(x));
     println!("Generated accumulator");
 
  
     // Tree
-    let tree : Vec<Vec<(u8,u8)>> = vec![
-                            vec![(1,1)],
-                        vec![(2,1)  ,(2,2)],
-                 vec![(2,3),   (2,2),   (2,1),   (2,2)],
-        vec![(2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0)]
-    ];
+    // let tree : Vec<Vec<(u8,u8)>> = vec![
+    //                         vec![(1,1)],
+    //                     vec![(2,1)  ,(2,2)],
+    //              vec![(2,3),   (2,2),   (2,1),   (2,2)],
+    //     vec![(2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0)],
+    //     vec![(2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0)],
+    //     vec![(2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0)],
+    //     vec![(2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0)],
+    //     vec![(2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0), (2,3),(1,2), (3,2),(2,1), (1,3),(0,3), (3,1),(3,0)]
+
+    // ];
+
+    let tree = build_decision_tree(d+1);
 
     let mut ct_res : (Ciphertext,Ciphertext);
     let mut ct_acc : Vec<Ciphertext>;
@@ -255,13 +310,15 @@ pub fn probonite()
     
     println!("FRST STAGE DONE !");
 
-    for i in 2..tree.len() { //tree.len() à la place de depth
+    for i in 2..d+1 { //tree.len() à la place de depth
         (ct_res, ct_acc) = probonite_one_stage(sks.clone(), 
             ct_res,
             &lut,
             ct_acc,
             tree[i].clone(), cks.clone());
     }
+
+    // ct_res = bench_probonite(&cks, &sks, tree, &lut, d);
     
     let duration_probonite = start_probonite.elapsed();
     println!("TIME PROBONITE : {:?}",duration_probonite);
@@ -278,4 +335,3 @@ pub fn probonite()
 
 
 }
-

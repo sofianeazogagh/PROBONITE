@@ -11,5 +11,5 @@ use probonite::probonite;
 
 
 fn main() {
-    probonite();
+    probonite(3);
 }
