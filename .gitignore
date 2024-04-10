@@ -1,6 +1,25 @@
-packed-PROBONITE/BlindArrayAccess/build/
-packed-PROBONITE/BlindArrayAccess/keys/
-packed-PROBONITE/pdte/
-packed-PROBONITE/src/
-packed-PROBONITE/test/
-openfhe-pdte/src/build
+# Cargo files
+/target/
+/.cargo/
+
+# Generated files
+Cargo.lock
+
+# Environment file
+.env
+
+# Visual Studio Code specific files
+.vscode/
+
+# IDE / Editor files
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.iml
+*.ipr
+
+# macOS specific files
+.DS_Store
+
+# Linux specific files
+*.swp
