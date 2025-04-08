@@ -59,8 +59,6 @@ fn main() {
 
     let args = Args::parse();
 
-    // xt_probolut::example_xt_training_probolut_vs_clear(args);
-
-    xt_probolut_radix::train_test_probolut_vs_clear(args);
+    xt_probolut_radix::benchmark(args);
 
 }
