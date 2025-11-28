@@ -8,7 +8,7 @@ pub mod tree;
 use std::time::Instant;
 
 const DEBUG: bool = false;
-const OBLIVIOUS: bool = true;
+const OBLIVIOUS: bool = false;
 
 use revolut::key;
 use revolut::radix::NyblByteLUT;

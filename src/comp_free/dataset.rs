@@ -153,6 +153,19 @@ impl ClearDataset {
         }
         batches
     }
+
+    pub fn join(&self, other: &ClearDataset) -> ClearDataset {
+        let mut new_records = self.records.clone();
+        new_records.extend_from_slice(&other.records);
+
+        ClearDataset {
+            records: new_records,
+            max_features: self.max_features.max(other.max_features),
+            n_classes: self.n_classes.max(other.n_classes),
+            f: self.f.max(other.f),
+            n: (self.n + other.n),
+        }
+    }
 }
 
 pub struct EncryptedSample {
