@@ -24,14 +24,12 @@ impl InternalNode {
 }
 
 pub struct Leaf {
-    pub counts: LUT,
+    pub label: u64,
 }
 
 impl Leaf {
-    pub fn print(&self, private_key: &PrivateKey, ctx: &Context, n_classes: u64) {
-        // self.counts.print(private_key, ctx);
-        let array = self.counts.to_array(private_key, ctx);
-        print!("{:?}", &array[..n_classes as usize]);
+    pub fn print(&self) {
+        print!("{}", self.label);
     }
 }
 
@@ -87,14 +85,13 @@ impl Tree {
         // Generate the leaves
         let num_leaves = 2u64.pow(depth as u32);
         for _ in 0..num_leaves {
-            let counts = LUT::from_vec_trivially(&vec![0u64; n_classes as usize], ctx);
-            tree.leaves.push(Leaf { counts });
+            tree.leaves.push(Leaf { label: rand::random::<u64>() % n_classes });
         }
 
         tree
     }
 
-    pub fn print_tree(&self, private_key: &PrivateKey, ctx: &Context) {
+    pub fn print_tree(&self) {
         println!("-----------[(t,f)]-----------");
         self.root.print();
         for stage in self.nodes.iter() {
@@ -105,7 +102,7 @@ impl Tree {
             println!("");
         }
         for leaf in self.leaves.iter() {
-            leaf.print(private_key, ctx, self.n_classes);
+            leaf.print();
             print!(" ");
         }
         println!("");
@@ -113,7 +110,7 @@ impl Tree {
     }
 
     #[allow(dead_code)]
-    pub fn to_json(&self, ctx: &Context) -> serde_json::Value {
+    pub fn to_json(&self) -> serde_json::Value {
         let mut tree_json = serde_json::Map::new();
 
         // Serialize depth and n_classes
@@ -127,14 +124,13 @@ impl Tree {
         );
 
         // Serialize leaves
-        let private_key = key(ctx.parameters());
         let leaves_json: Vec<serde_json::Value> = self
             .leaves
             .iter()
             .map(|leaf| {
                 serde_json::json!({
                     "type": "leaf",
-                    "counts": leaf.counts.to_array(&private_key, ctx)[..self.n_classes as usize].to_vec()
+                    "label": leaf.label
                 })
             })
             .collect();
@@ -170,14 +166,14 @@ impl Tree {
     }
 
     #[allow(dead_code)]
-    pub fn save_to_file(&self, filepath: &str, ctx: &Context) {
-        let json_value = self.to_json(ctx);
+    pub fn save_to_file(&self, filepath: &str) {
+        let json_value = self.to_json();
         let json_string = serde_json::to_string_pretty(&json_value).unwrap();
         std::fs::write(filepath, json_string).unwrap();
     }
 
     #[allow(dead_code)]
-    pub fn from_json(json: &serde_json::Value, ctx: &Context) -> Self {
+    pub fn from_json(json: &serde_json::Value) -> Self {
         let mut tree = Tree::new();
 
         // Deserialize depth and n_classes
@@ -226,14 +222,8 @@ impl Tree {
         // Deserialize leaves
         if let Some(leaves) = json.get("leaves").and_then(|v| v.as_array()) {
             for leaf_json in leaves {
-                let mut counts = vec![0; n_classes as usize];
-                if let Some(counts_json) = leaf_json.get("counts").and_then(|v| v.as_array()) {
-                    for (i, count) in counts_json.iter().enumerate() {
-                        counts[i] = count.as_u64().unwrap_or(0);
-                    }
-                }
                 tree.leaves.push(Leaf {
-                    counts: LUT::from_vec_trivially(&counts, ctx),
+                    label: leaf_json.get("label").and_then(|v| v.as_u64()).unwrap_or(0),
                 });
             }
         }
@@ -242,12 +232,12 @@ impl Tree {
     }
 
     #[allow(dead_code)]
-    pub fn load_from_file(filepath: &str, ctx: &Context) -> std::io::Result<Self> {
+    pub fn load_from_file(filepath: &str) -> std::io::Result<Self> {
         let json_content = std::fs::read_to_string(filepath).map_err(|_| {
             std::io::Error::new(std::io::ErrorKind::NotFound, "Tree file does not exist")
         })?;
         let json_value: serde_json::Value = serde_json::from_str(&json_content)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-        Ok(Self::from_json(&json_value, ctx))
+        Ok(Self::from_json(&json_value))
     }
 }

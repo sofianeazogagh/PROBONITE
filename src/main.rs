@@ -21,19 +21,17 @@ fn main() {
     // let tree_depth = 3;
     let n_classes = 2;
 
-    for tree_depth in [3,8,10].iter() {
+    for tree_depth in [3,7,5,10,13,16].iter() {
         println!("Tree depth: {}", *tree_depth);
         println!("--------------------------------");
         if GENERATE_TREE {
             tree = Tree::generate_random_tree(*tree_depth, n_classes, &ctx);
             tree.save_to_file(
                 &format!("random_trees/exp/random_tree_{}_{}.json", *tree_depth, n_classes),
-                &ctx,
             );
         } else {
             tree = Tree::load_from_file(
                 &format!("random_trees/exp/random_tree_{}_{}.json", *tree_depth, n_classes),
-                &ctx,
             )
             .unwrap();
         }
@@ -41,15 +39,15 @@ fn main() {
         let feature_vector: Vec<u64> = (0..p)
             .map(|_| rand::random::<u64>() % p)
             .collect();
-        let class = 1;
 
-        let query = Query::make_query(&feature_vector, &class, &private_key, &mut ctx);
+        let query = Query::make_query(&feature_vector, &private_key, &mut ctx);
 
         let start = Instant::now();
-        probonite(&mut tree, &query, &public_key, &ctx);
+        let predicted_class = probonite(&mut tree, &query, &public_key, &ctx);
         let end = Instant::now();
-        println!("Time taken: {:?}", end.duration_since(start));
-
-        tree.print_tree(&private_key, &ctx);
+        println!("[TIME]: {:?}", end.duration_since(start));
+        let predicted_class = private_key.decrypt_lwe(&predicted_class, &ctx);
+        println!("Predicted class: {}", predicted_class);
+        tree.print_tree();
     }
 }
