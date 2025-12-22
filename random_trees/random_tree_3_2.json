@@ -61,12 +61,16 @@
   "n_classes": 2,
   "nodes": [
     {
-      "feature_index": 4,
+      "feature_index": 1,
       "threshold": 0
     },
     {
-      "feature_index": 1,
-      "threshold": 1
+      "feature_index": 0,
+      "threshold": 2
+    },
+    {
+      "feature_index": 3,
+      "threshold": 3
     },
     {
       "feature_index": 2,
@@ -74,19 +78,15 @@
     },
     {
       "feature_index": 0,
-      "threshold": 0
+      "threshold": 2
     },
     {
-      "feature_index": 6,
-      "threshold": 6
-    },
-    {
-      "feature_index": 7,
-      "threshold": 7
+      "feature_index": 1,
+      "threshold": 1
     }
   ],
   "root": {
-    "feature_index": 6,
+    "feature_index": 2,
     "threshold": 1
   }
 }
