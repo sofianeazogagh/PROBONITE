@@ -14,7 +14,7 @@ type LWE = LweCiphertext<Vec<u64>>;
 use crate::model::*;
 
 const DEBUG: bool = false;
-const THREADS: usize = 6; // Nombre de threads pour la parallélisation
+const THREADS: usize = 1; // Nombre de threads pour la parallélisation
 
 pub struct Query {
     features: LUT,
@@ -106,7 +106,7 @@ pub fn probonite(tree: &Tree, query: &Query, public_key: &PublicKey, ctx: &Conte
     let b = public_key.leq_scalar(&feature, threshold, ctx);
     let not_b = public_key.not_lwe(&b, ctx);
     let end = Instant::now();
-    println!("First stage: {:?}", end.duration_since(start));
+    // println!("First stage: {:?}", end.duration_since(start));
     let mut accumulators = vec![b, not_b];
     
     // Internal Stages
@@ -126,13 +126,13 @@ pub fn probonite(tree: &Tree, query: &Query, public_key: &PublicKey, ctx: &Conte
         let b = public_key.blind_lt_bma_mv(&threshold, &feature, ctx);
         accumulators = next_accumulators(&accumulators, &b, public_key, ctx, &pool);
         let end = Instant::now();
-        println!("Internal stage {}: {:?}", i, end.duration_since(start));
+        // println!("Internal stage {}: {:?}", i, end.duration_since(start));
     }
 
     // Last stage : increment the leaves and get the majority class through argmax
     let start = Instant::now();
     let selected_leaf = blind_leaf_selection(&tree.leaves, &accumulators, public_key, ctx, &pool);
     let end = Instant::now();
-    println!("Last stage: {:?}", end.duration_since(start));
+    // println!("Last stage: {:?}", end.duration_since(start));
     selected_leaf
 }

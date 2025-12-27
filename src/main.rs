@@ -21,7 +21,10 @@ fn main() {
     // let tree_depth = 3;
     let n_classes = 2;
 
-    for tree_depth in [3,7,5,10,13,16].iter() {
+    // let depths = [3,7,5,10,13,16];
+    let depths = [3,4,5,8];
+
+    for tree_depth in depths.iter() {
         println!("Tree depth: {}", *tree_depth);
         println!("--------------------------------");
         if GENERATE_TREE {
